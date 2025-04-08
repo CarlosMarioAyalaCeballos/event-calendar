@@ -86,4 +86,144 @@ h2 {
   margin-top: 5px;
   border-radius: 3px;
   word-wrap: break-word;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.event:hover {
+  transform: scale(1.02);
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+  background-color: #fff;
+  margin: 15% auto;
+  padding: 20px;
+  border-radius: 8px;
+  width: 60%;
+  max-width: 500px;
+  position: relative;
+}
+
+.close {
+  position: absolute;
+  right: 15px;
+  top: 5px;
+  font-size: 28px;
+  cursor: pointer;
+  color: #666;
+}
+
+.close:hover {
+  color: #000;
+}
+
+.modal-actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+#deleteEvent, #editEvent {
+  padding: 10px 20px;
+  border: none;
+  color: white;
+  cursor: pointer;
+  border-radius: 5px;
+  flex: 1;
+}
+
+#deleteEvent {
+  background-color: #dc3545;
+}
+
+#deleteEvent:hover {
+  background-color: #bb2d3b;
+}
+
+#editEvent {
+  background-color: #28a745;
+}
+
+#editEvent:hover {
+  background-color: #218838;
+}
+#editModal .modal-content {
+  max-width: 500px;
+  padding: 30px;
+}
+
+#editForm {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+#editForm input,
+#editForm textarea {
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+#editForm input:focus,
+#editForm textarea:focus {
+  border-color: #007BFF;
+  outline: none;
+}
+
+#editForm button {
+  background-color: #28a745;
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s;
+}
+
+#editForm button:hover {
+  background-color: #218838;
+}
+
+.close-edit {
+  position: absolute;
+  right: 20px;
+  top: 15px;
+  font-size: 28px;
+  color: #666;
+  cursor: pointer;
+}
+
+.close-edit:hover {
+  color: #333;
+}
+
+/* Mejoras generales a los modales */
+.modal-content {
+  position: relative;
+  animation: modalOpen 0.3s ease-out;
+}
+
+@keyframes modalOpen {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }

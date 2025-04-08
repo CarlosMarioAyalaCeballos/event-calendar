@@ -2,19 +2,15 @@
 include 'includes/db.php';
 include 'templates/header.php';
 
-// Obtén el mes y año actuales o los que se pasen por GET
 $mes = isset($_GET['mes']) ? $_GET['mes'] : date('m');
 $anio = isset($_GET['anio']) ? $_GET['anio'] : date('Y');
 
-// Calcula el primer día de la semana del mes y la cantidad de días
 $primerDia = date('w', strtotime("$anio-$mes-01"));
 $diasEnMes = cal_days_in_month(CAL_GREGORIAN, $mes, $anio);
 
-// Consulta los eventos para el mes y año indicados
 $eventos = [];
 $result = $conn->query("SELECT * FROM eventos WHERE MONTH(fecha) = $mes AND YEAR(fecha) = $anio");
 while ($row = $result->fetch_assoc()) {
-    // Extrae el día (sin ceros a la izquierda)
     $diaEvento = date('j', strtotime($row['fecha']));
     $eventos[$diaEvento][] = $row;
 }
@@ -32,26 +28,28 @@ while ($row = $result->fetch_assoc()) {
 
   <div class="calendar">
     <?php
-    // Imprime los encabezados de los días
     $diasSemana = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
     foreach ($diasSemana as $d) {
         echo "<div class='day'>$d</div>";
     }
 
-    // Celdas vacías antes del primer día del mes
     for ($i = 0; $i < $primerDia; $i++) {
         echo "<div class='empty'></div>";
     }
 
-    // Imprime cada día del mes
     for ($dia = 1; $dia <= $diasEnMes; $dia++) {
-        // Si es la fecha actual, agrega la clase 'today'
         $fechaActual = sprintf("%04d-%02d-%02d", $anio, $mes, $dia);
         $clase = (date('Y-m-d') == $fechaActual) ? "date today" : "date";
         echo "<div class='$clase'><strong>$dia</strong>";
         if (isset($eventos[$dia])) {
             foreach ($eventos[$dia] as $ev) {
-                echo "<div class='event'>" . htmlspecialchars($ev['titulo']) . "</div>";
+                echo "<div class='event' 
+                        data-id='{$ev['id']}'
+                        data-titulo='" . htmlspecialchars($ev['titulo']) . "'
+                        data-descripcion='" . htmlspecialchars($ev['descripcion']) . "'
+                        data-fecha='" . htmlspecialchars($ev['fecha']) . "'>
+                      " . htmlspecialchars($ev['titulo']) . "
+                      </div>";
             }
         }
         echo "</div>";
@@ -59,5 +57,109 @@ while ($row = $result->fetch_assoc()) {
     ?>
   </div>
 </div>
+
+<!-- Modal de Detalles -->
+<div id="eventModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h3 id="modalTitle"></h3>
+    <p id="modalDescription"></p>
+    <p><strong>Fecha:</strong> <span id="modalDate"></span></p>
+    <div class="modal-actions">
+      <button id="editEvent">Editar</button>
+      <button id="deleteEvent">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Edición -->
+<div id="editModal" class="modal">
+  <div class="modal-content">
+    <span class="close-edit">&times;</span>
+    <h3>Editar Evento</h3>
+    <form id="editForm" method="POST">
+      <input type="hidden" name="id" id="editId">
+      <input type="text" name="titulo" id="editTitulo" placeholder="Título" required>
+      <textarea name="descripcion" id="editDescripcion" placeholder="Descripción" required></textarea>
+      <input type="date" name="fecha" id="editFecha" required>
+      <button type="submit">Guardar Cambios</button>
+    </form>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modals = {
+        details: document.getElementById('eventModal'),
+        edit: document.getElementById('editModal')
+    };
+    
+    const closeBtns = {
+        details: document.querySelector('.close'),
+        edit: document.querySelector('.close-edit')
+    };
+
+    // Manejar clic en eventos
+    document.querySelectorAll('.event').forEach(event => {
+        event.addEventListener('click', () => {
+            modals.details.style.display = 'block';
+            document.getElementById('modalTitle').textContent = event.dataset.titulo;
+            document.getElementById('modalDescription').textContent = event.dataset.descripcion;
+            document.getElementById('modalDate').textContent = event.dataset.fecha;
+
+            // Configurar botones de acción
+            document.getElementById('deleteEvent').onclick = () => {
+                if(confirm('¿Eliminar este evento permanentemente?')) {
+                    window.location = `delete_event.php?id=${event.dataset.id}`;
+                }
+            };
+
+            document.getElementById('editEvent').onclick = () => {
+                modals.details.style.display = 'none';
+                modals.edit.style.display = 'block';
+                
+                // Llenar formulario de edición
+                document.getElementById('editId').value = event.dataset.id;
+                document.getElementById('editTitulo').value = event.dataset.titulo;
+                document.getElementById('editDescripcion').value = event.dataset.descripcion;
+                document.getElementById('editFecha').value = event.dataset.fecha;
+            };
+        });
+    });
+
+    // Manejar cierre de modales
+    Object.entries(closeBtns).forEach(([key, btn]) => {
+        btn.onclick = () => modals[key].style.display = 'none';
+    });
+
+    window.onclick = (e) => {
+        if(e.target.classList.contains('modal')) {
+            Object.values(modals).forEach(modal => modal.style.display = 'none');
+        }
+    }
+
+    // Manejar envío de edición
+    document.getElementById('editForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        
+        try {
+            const response = await fetch('edit_event.php', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if(response.ok) {
+                window.location.reload();
+            } else {
+                alert('Error al actualizar el evento');
+            }
+        } catch(error) {
+            console.error('Error:', error);
+            alert('Error de conexión');
+        }
+    });
+});
+</script>
 
 <?php include 'templates/footer.php'; ?>
